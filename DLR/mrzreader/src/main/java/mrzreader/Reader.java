@@ -9,6 +9,7 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import com.alibaba.fastjson.JSON;
+import com.dynamsoft.dlr.DLRLineResult;
 import com.dynamsoft.dlr.DLRResult;
 import com.dynamsoft.dlr.LabelRecognizer;
 import com.dynamsoft.dlr.LabelRecognizerException;
@@ -70,25 +71,28 @@ public class Reader {
 	private static String recognize(LabelRecognizer dlr, String imagePath) {
 		ArrayList<HashMap<String,Object>> boxes = new ArrayList<>();
 		HashMap<String,Object> result = new HashMap<String, Object>();
-		HashMap<String,Object> box = new HashMap<String, Object>();
+		
 		long startTime = System.currentTimeMillis();
 		try {
 
 			DLRResult[] results = dlr.recognizeByFile(imagePath,"locr");
 
-            StringBuilder sb = new StringBuilder();
             if (results != null && results.length > 0){
-                if (results[0].lineResults.length == 2){
-                    String MRZCode_1 = results[0].lineResults[0].text;
-                    String MRZCode_2 = results[0].lineResults[1].text;
-                    sb.append(MRZCode_1);
-                    sb.append("\n");
-                    sb.append(MRZCode_2);
-                    box.put("text", sb.toString());
-                    boxes.add(box);
-                }else {
-                    System.out.println("Line number not matched.");
-                }
+            	for (DLRResult textResult:results) {
+            		for (DLRLineResult lineResult:textResult.lineResults) {
+            			HashMap<String,Object> box = new HashMap<String, Object>();
+            			box.put("text", lineResult.text);
+            			box.put("x1", lineResult.location.points[0].x);
+            			box.put("y1", lineResult.location.points[0].y);
+            			box.put("x2", lineResult.location.points[1].x);
+            			box.put("y2", lineResult.location.points[1].y);
+            			box.put("x3", lineResult.location.points[2].x);
+            			box.put("y3", lineResult.location.points[2].y);
+            			box.put("x4", lineResult.location.points[3].x);
+            			box.put("y4", lineResult.location.points[3].y);
+                        boxes.add(box);            			
+            		}
+            	}
             }else {
                 System.out.println("No result.");
             }
@@ -104,5 +108,4 @@ public class Reader {
         String jsonString = JSON.toJSONString(result);
 		return jsonString;
 	}
-
 }
